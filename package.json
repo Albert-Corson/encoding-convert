@@ -1,0 +1,14 @@
+{
+  "name": "enc-convert",
+  "version": "1.0.0",
+  "description": "Converts a repository to utf-8 file encoding",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "ACN",
+  "license": "ISC",
+  "dependencies": {
+    "iconv-lite": "^0.5.0"
+  }
+}
