@@ -8,7 +8,13 @@
   },
   "author": "ACN",
   "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Albert-Corson/encoding-convert.git"
+  },
   "dependencies": {
-    "iconv-lite": "^0.5.0"
+    "iconv-lite": "^0.5.0",
+    "isbinaryfile": "^4.0.2",
+    "jschardet": "^2.1.0"
   }
 }
