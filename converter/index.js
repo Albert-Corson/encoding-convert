@@ -1,6 +1,6 @@
 const fs = require('fs');
 
-const converter = require('./private');
+const converter = require('./converter');
 
 class EncodingConverter {
     /**
@@ -30,11 +30,14 @@ class EncodingConverter {
         if (pathStat.isFile()) {
             return converter.convertFile(pathToConv, saveDir, fromEncoding, toEncoding);
         } else if (pathStat.isDirectory()) {
-            if (typeof toIgnore !== 'array')
-                toIgnore = await converter.loadConvIgnore(params.saveDir);
+            if (!toIgnore)
+                toIgnore = await converter.loadConvIgnore(params.pathToConv, params.saveDir);
+            else if (!Array.isArray(toIgnore))
+                throw Error(`Error: 'toIgnore': expected an array but got ${typeof toIgnore}`);
+
             return converter.convertDir(params, toIgnore);
         } else {
-            throw `Error: path to convert is neither a file nor a directory (${pathToConv})`;
+            throw Error(`Error: path to convert is neither a file nor a directory (${pathToConv})`);
         }
     }
 
@@ -60,8 +63,10 @@ class EncodingConverter {
     static async convertDir(pathToConv, saveDir, fromEncoding, toEncoding, toIgnore) {
         const params = await converter.translateParams(pathToConv, saveDir, fromEncoding, toEncoding);
 
-        if (typeof toIgnore !== 'array')
-            toIgnore = await converter.loadConvIgnore(params.saveDir);
+        if (!toIgnore)
+            toIgnore = await converter.loadConvIgnore(params.pathToConv, params.saveDir);
+        else if (!Array.isArray(toIgnore))
+            throw Error(`Error: 'toIgnore': expected an array but got ${typeof toIgnore}`);
 
         return converter.convertDir(params, toIgnore);
     }
@@ -87,7 +92,7 @@ class EncodingConverter {
         const pathStat = fs.lstatSync(params.pathToConv);
 
         if (!pathStat.isFile()) {
-            throw `Error: ${pathToConv} is not a file`;
+            throw Error(`Error: ${pathToConv} is not a file`);
         }
         return converter.convertFile(params);
     }
@@ -111,7 +116,7 @@ class EncodingConverter {
         const pathStat = fs.lstatSync(params.pathToConv);
 
         if (!pathStat.isFile()) {
-            throw `Error: ${pathToConv} is not a file`;
+            throw Error(`Error: ${pathToConv} is not a file`);
         }
         return converter.getConvertedFileBuffer(params);
     }

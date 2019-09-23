@@ -13,18 +13,18 @@ params = {
 }
 */
 
-async function loadConvIgnore(saveDir) {
+async function loadConvIgnore(pathToConvert, saveDir) {
     const convIgnore = path.resolve(process.cwd(), '.convIgnore');
     let toIgnore = [saveDir, convIgnore];
 
-    if (!fs.existsSync(convIgnore))
-        return toIgnore;
+    if (!fs.existsSync(convIgnore)) return toIgnore;
 
     const data = await fs.promises.readFile(convIgnore, 'utf-8');
 
-    toIgnore.push(...data.split('\n'));
-    for (let index = 2; toIgnore[index]; ++index)
-        toIgnore[index] = path.resolve(process.cwd(), toIgnore[index]);
+    for (const ignore of data.split('\n')) {
+        if (ignore.length <= 0) continue;
+        toIgnore.push(path.resolve(process.cwd(), pathToConvert, ignore));
+    }
 
     return toIgnore;
 }
@@ -33,8 +33,8 @@ async function translateParams(pathToConv, saveDir, fromEncoding, toEncoding) {
     const isVarValid = (varName, varValue, varType) => {
         const type = typeof varValue;
         if (type !== varType)
-            throw `Error: '${varName}': unexpected variable type, got '${type}', expected '${varType}'`;
-    }
+            throw Error(`Error: '${varName}': unexpected variable type, got '${type}', expected '${varType}'`);
+    };
 
     isVarValid('pathToConv', pathToConv, 'string');
     isVarValid('saveDir', saveDir, 'string');
@@ -45,15 +45,15 @@ async function translateParams(pathToConv, saveDir, fromEncoding, toEncoding) {
         pathToConv: path.resolve(process.cwd(), pathToConv || '.'),
         saveDir: path.resolve(process.cwd(), saveDir || './CONVERTED/'),
         fromEncoding: fromEncoding,
-        toEncoding: toEncoding || 'UTF-8',
+        toEncoding: toEncoding || 'UTF-8'
     };
 
     if (!fs.existsSync(params.pathToConv))
-        throw `Error: path to convert isn't valid (${params.pathToConv})`;
+        throw Error(`Error: path to convert isn't valid (${params.pathToConv})`);
     if (params.fromEncoding && !iconv.encodingExists(params.fromEncoding))
-        throw `Error: unsupported encoding: '${params.fromEncoding}'`;
+        throw Error(`Error: unsupported encoding: '${params.fromEncoding}'`);
     if (!iconv.encodingExists(params.toEncoding))
-        throw `Error: unsupported encoding: '${params.toEncoding}'`;
+        throw Error(`Error: unsupported encoding: '${params.toEncoding}'`);
 
     return params;
 }
@@ -76,8 +76,8 @@ async function convertDir(params, toIgnore) {
 
         const subParams = {
             ...params,
-            pathToConv: toConvert,
-        }
+            pathToConv: toConvert
+        };
         if (pathStat.isFile()) {
             promises.push(
                 convertFile(subParams)
@@ -89,11 +89,10 @@ async function convertDir(params, toIgnore) {
             );
         } else if (pathStat.isDirectory()) {
             promises.push(
-                convertDir(subParams, toIgnore)
-                    .then(res => {
-                        parsed += res.parsed;
-                        failed += res.failed;
-                    })
+                convertDir(subParams, toIgnore).then(res => {
+                    parsed += res.parsed;
+                    failed += res.failed;
+                })
             );
         }
     }
@@ -106,7 +105,10 @@ async function convertFile(params) {
         await fs.promises.mkdir(params.saveDir, { recursive: true });
 
         const buffer = await getConvertedFileBuffer(params);
-        const savePath = path.resolve(params.saveDir, path.basename(params.pathToConv));
+        const savePath = path.resolve(
+            params.saveDir,
+            path.basename(params.pathToConv)
+        );
 
         await fs.promises.writeFile(savePath, buffer);
     } catch (err) {
@@ -119,24 +121,26 @@ async function getConvertedFileBuffer(params) {
 
     try {
         await fs.promises.access(params.pathToConv, fs.constants.R_OK);
-    } catch {
-        throw `Missing read permissions on ${params.pathToConv}`;
+    } catch (err) {
+        throw Error(`Missing read permissions on ${params.pathToConv}`);
     }
     try {
         buffer = await fs.promises.readFile(params.pathToConv);
     } catch (error) {
-        throw `Can't read file ${params.pathToConv}`;
+        throw Error(`Can't read file ${params.pathToConv}`);
     }
     if (await isbinaryfile.isBinaryFile(buffer))
-        throw `Can't convert ${params.pathToConv} (binary file detected)`;
+        throw Error(`Can't convert ${params.pathToConv} (binary file detected)`);
 
     let fromEncoding = params.fromEncoding;
     if (!fromEncoding) {
         let detected = await jschardet.detect(buffer, { minimumThreshold: 0 });
         if (!iconv.encodingExists(detected.encoding))
-            throw `Error: detected encoding ('${detected.encoding}') is not supported (${params.pathToConv})`;
+            throw Error(`Error: detected encoding ('${detected.encoding}') is not supported (${params.pathToConv})`);
         else
-            console.log(`Info: detected encoding '${detected.encoding}' for file ${params.pathToConv} (${detected.confidence * 100}% confident)`);
+            console.log(
+                `Info: detected encoding '${detected.encoding}' for file ${params.pathToConv} (${detected.confidence * 100}% confident)`
+            );
         fromEncoding = detected.encoding;
     }
 
@@ -152,4 +156,4 @@ module.exports = {
     convertDir,
     convertFile,
     getConvertedFileBuffer
-}
+};

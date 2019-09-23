@@ -1,3 +1,12 @@
+try {
+    require('isbinaryfile');
+    require('iconv-lite');
+    require('jschardet');
+} catch (err) {
+    console.error('Please run `npm i`');
+    process.exit(1);
+}
+
 const path = require('path');
 
 const Converter = require('./converter');
