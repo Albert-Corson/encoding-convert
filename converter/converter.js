@@ -99,17 +99,19 @@ async function convert(params, toIgnore) {
 async function convertDir(params, toIgnore) {
     const basename = path.basename(params.pathToConv);
     const dirs = await fs.promises.readdir(params.pathToConv);
-    const subParams = {
-        ...params,
-        saveDir: path.resolve(params.saveDir, basename)
-    };
+    const subSaveDir = path.resolve(params.saveDir, basename);
+
 
     let parsed = 0;
     let failed = 0;
     let copied = 0;
     let promises = [];
     for (const dir of dirs) {
-        subParams.pathToConv = path.resolve(params.pathToConv, dir);
+        const subParams = {
+            ...params,
+            saveDir: subSaveDir,
+            pathToConv: path.resolve(params.pathToConv, dir)
+        };
 
         if (subParams.pathToConv !== params.saveDir) {
             promises.push(convert(subParams, toIgnore).then(res => {
