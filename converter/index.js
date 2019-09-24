@@ -33,7 +33,7 @@ class EncodingConverter {
                 failed: 0,
                 copied: 0
             };
-            await converter.convertFile(params)
+            await converter.convertFile(params, true)
                 .then(res => {
                     if (res)
                         ++retValue.converted;
@@ -112,7 +112,8 @@ class EncodingConverter {
         if (!pathStat.isFile()) {
             throw Error(`Error: path to convert is not a file: ${pathToConv}`);
         }
-        return converter.convertFile(params);
+
+        return converter.convertFile(params, true);
     }
 
 

@@ -130,10 +130,10 @@ async function convertDir(params, toIgnore) {
     };
 }
 
-async function convertFile(params) {
+async function convertFile(params, force) {
     let buffer;
     try {
-        const res = await getConvertedFileBuffer(params);
+        const res = await getConvertedFileBuffer(params, force);
         buffer = res.buffer;
         if (!params.fromEncoding)
             console.log(`Info: detected encoding '${res.encoding}' (confidence: ${res.confidence * 100}%): ${params.pathToConv}`);
@@ -153,7 +153,7 @@ async function convertFile(params) {
     return true;
 }
 
-async function getConvertedFileBuffer(params) {
+async function getConvertedFileBuffer(params, force) {
     let buffer;
 
     try {
@@ -168,7 +168,7 @@ async function getConvertedFileBuffer(params) {
         throw `Error: can't read file: ${params.pathToConv}`;
     }
 
-    if (await isbinaryfile.isBinaryFile(buffer)) {
+    if (!force && await isbinaryfile.isBinaryFile(buffer)) {
         throw `Error: can't convert, non-text file detected: ${params.pathToConv}`;
     }
 
@@ -176,6 +176,8 @@ async function getConvertedFileBuffer(params) {
     let fromEncoding = params.fromEncoding;
     if (!fromEncoding) {
         detected = await jschardet.detect(buffer, { minimumThreshold: 0 });
+        if (!detected.encoding)
+            throw `Error: can't detect file encoding: ${params.pathToConv}`;
         if (!iconv.encodingExists(detected.encoding))
             throw `Error: detected encoding '${detected.encoding}' is not supported: ${params.pathToConv}`;
         fromEncoding = detected.encoding;
