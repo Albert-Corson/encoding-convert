@@ -28,17 +28,17 @@ async function copy(params) {
 async function copyDir(params) {
     const basename = path.basename(params.pathToConv);
     const dirs = await fs.promises.readdir(params.pathToConv);
-    const subParams = {
-        ...params,
-        saveDir: path.resolve(params.saveDir, basename),
-    };
-
+    const subSaveDir = path.resolve(params.saveDir, basename);
 
     let copied = 0;
     let failed = 0;
     let promises = [];
     for (const dir of dirs) {
-        subParams.pathToConv = path.resolve(params.pathToConv, dir);
+        const subParams = {
+            ...params,
+            saveDir: subSaveDir,
+            pathToConv: path.resolve(params.pathToConv, dir)
+        };
 
         promises.push(copy(subParams).then(res => {
             copied += res.copied;
