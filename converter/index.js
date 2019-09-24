@@ -20,15 +20,32 @@ class EncodingConverter {
      * and will add the paths of `saveDir` and `.convIgnore` to the array
      * 
      * @returns {Promise}
-     * Promise that resolves with `{ parsed: int, failed: int }` if converting a directory, or no values if converting a file.
+     * Promise that resolves with `{ converted: int, copied: int, failed: int, total: int }`
      * It rejects with an error message
      */
     static async convert(pathToConv, saveDir, fromEncoding, toEncoding, toIgnore) {
         const params = await converter.translateParams(pathToConv, saveDir, fromEncoding, toEncoding);
         const pathStat = fs.lstatSync(params.pathToConv);
-
+        
         if (pathStat.isFile()) {
-            return converter.convertFile(pathToConv, saveDir, fromEncoding, toEncoding);
+            const retValue = {
+                converted: 0,
+                failed: 0,
+                copied: 0
+            };
+            await converter.convertFile(params)
+                .then(res => {
+                    if (res)
+                        ++retValue.converted;
+                    else
+                        ++retValue.copied;
+                }).catch(err => {
+                    console.error(err);
+                    ++retValue.failed;
+                });
+            retValue.total = retValue.converted + retValue.failed + retValue.copied;
+
+            return retValue;
         } else if (pathStat.isDirectory()) {
             if (!toIgnore)
                 toIgnore = await converter.loadConvIgnore(params.pathToConv, params.saveDir);
@@ -58,7 +75,7 @@ class EncodingConverter {
      * and will add the paths of `saveDir` and `.convIgnore` to the array
      * 
      * @returns {Promise}
-     * Promise that resolves with `{ parsed: int, failed: int, total: int }` or rejects with an error message
+     * Promise that resolves with `{ converted: int, copied: int, failed: int, total: int }` or rejects with an error message
      */
     static async convertDir(pathToConv, saveDir, fromEncoding, toEncoding, toIgnore) {
         const params = await converter.translateParams(pathToConv, saveDir, fromEncoding, toEncoding);
@@ -85,14 +102,15 @@ class EncodingConverter {
      * - Name of the encoding to convert the files to. Default: `UTF-8`
      * 
      * @returns {Promise}
-     * Promise that resolves without values or rejects with an error message
+     * Promise that resolves with true the conversion was successful or false if the file was just copied.
+     * It rejects with an error message
      */
     static async convertFile(pathToConv, saveDir, fromEncoding, toEncoding) {
         const params = await converter.translateParams(pathToConv, saveDir, fromEncoding, toEncoding);
         const pathStat = fs.lstatSync(params.pathToConv);
 
         if (!pathStat.isFile()) {
-            throw Error(`Error: ${pathToConv} is not a file`);
+            throw Error(`Error: path to convert is not a file: ${pathToConv}`);
         }
         return converter.convertFile(params);
     }
@@ -109,14 +127,14 @@ class EncodingConverter {
      * - Name of the encoding to convert the files to. Default: `UTF-8`
      * 
      * @returns {Promise}
-     * Promise that resolves with the converted file content or rejects with an error message
+     * Promise that resolves with `{ buffer, encoding: string, confidence: int }` or rejects with an error message
      */
     async getConvertedFileBuffer(filePath, fromEncoding, toEncoding) {
         const params = await converter.translateParams(filePath, undefined, fromEncoding, toEncoding);
         const pathStat = fs.lstatSync(params.pathToConv);
 
         if (!pathStat.isFile()) {
-            throw Error(`Error: ${pathToConv} is not a file`);
+            throw Error(`Error: path to convert is not a file: ${pathToConv}`);
         }
         return converter.getConvertedFileBuffer(params);
     }

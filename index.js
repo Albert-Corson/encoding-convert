@@ -1,30 +1,15 @@
-try {
-    require('isbinaryfile');
-    require('iconv-lite');
-    require('jschardet');
-} catch (err) {
-    console.error('Please run `npm i`');
-    process.exit(1);
-}
-
-const path = require('path');
-
 const Converter = require('./converter');
 
-const fromEncoding = process.argv[2];
-const toEncoding = process.argv[3];
-const fromPath = !process.argv[4] ? process.argv[4] : path.resolve(process.cwd(), process.argv[4]);
-const toPath = path.resolve(process.cwd(), process.argv[5] || './CONVERTED/');
+const args = process.argv.slice(2);
 
-if (!fromEncoding || !toEncoding || !fromPath) {
-    console.log(
-        `Usage:\n\tnode index.js <fromEncoding> <toEncoding> <pathToConvert> [saveDir]`
-    );
-    process.exit(1);
+for (const index in args) {
+    if (args[index] === '-u') {
+        args[index] = undefined;
+    }
 }
 
-Converter.convert(fromPath, toPath, fromEncoding, toEncoding)
-.then(res => console.log(`Parsed ${res.parsed}/${res.total} files (${res.failed} failed).`))
+Converter.convert(...args)
+.then(res => console.log(res))
 .catch(err => {
     console.error(err);
     process.exit(1);
