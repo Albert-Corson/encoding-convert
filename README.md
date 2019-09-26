@@ -15,7 +15,7 @@ _Passing `-u` as an argument means the value of the said argument will be `undef
 - `[pathToConvert]` is the path to a file or directory to convert. _Deafult '.'_
 - `[saveDir]` is the directory where the files will be saved. _Default: ./CONVERTED/_
 
-`.convIgnore`: The script will automatically look for a .convIgnore file in pwd and will ignore the files/folder mentioned in it (just like a .gitignore file)
+`.convIgnore`: The script will automatically look for a .convIgnore file in your working directory (pwd) and will ignore the files/folder mentioned in it (just like a .gitignore file). The content of this file should be in UTF-8
 
 > Note that the file names and tree of the repository will be reproduced in saveDir. __Files that can't be converted or those in the `.convIgnore` will be copied to maintain the tree.__
 
